@@ -66,11 +66,11 @@ const THEMES = {
     navBg: "#FFFFFF", navBorder: "#C5CDDE", overlay: "rgba(53,45,60,0.4)", isDark: false,
   },
   dark: {
-    bg: "#211C28", bgElevated: "#2C2635", card: "#2C2635", cardBorder: "#433B52",
-    ink: "#F2EFF6", inkMuted: "#C5CDDE", inkFaint: "#8B87A1", accent: "#DFA3BC",
-    accentSoft: "#3A3762", star: "#DFA3BC", onAccent: "#211C28",
-    positive: "#5FC98A", negative: "#E1786A", dangerSoft: "#382229",
-    navBg: "#27212F", navBorder: "#433B52", overlay: "rgba(0,0,0,0.6)", isDark: true,
+    bg: "#141822", bgElevated: "#1C2230", card: "#1C2230", cardBorder: "#2E3650",
+    ink: "#EEF1F8", inkMuted: "#C5CDDE", inkFaint: "#7F8AA6", accent: "#869FEA",
+    accentSoft: "#222A46", star: "#DFA3BC", onAccent: "#0E1220",
+    positive: "#5FC98A", negative: "#E1786A", dangerSoft: "#33201F",
+    navBg: "#181D2A", navBorder: "#2E3650", overlay: "rgba(4,7,14,0.65)", isDark: true,
   },
 };
 
@@ -111,6 +111,7 @@ export default function App() {
   const [showWriteReview, setShowWriteReview] = useState(null); // null | {} (new) | review object (editing)
   const [toast, setToast] = useState("");
   const [detailId, setDetailId] = useState(null); // review id shown in the detail overlay
+  const [confirm, setConfirm] = useState(null); // null | { type: "delete", id } | { type: "edit", review }
   const editingRef = useRef(false);
 
   const T = dark ? THEMES.dark : THEMES.light;
@@ -179,7 +180,7 @@ export default function App() {
   const myReviewIds = getMyReviewIds();
   const detailReview = detailId ? reviews.find((r) => r.id === detailId) : null;
 
-  const saveReview = (review) => {
+  const commitReview = (review) => {
     const exists = reviews.some((r) => r.id === review.id);
     const nextReviews = exists ? reviews.map((r) => (r.id === review.id ? review : r)) : [review, ...reviews];
     persist({ ...data, reviews: nextReviews });
@@ -187,6 +188,13 @@ export default function App() {
     setShowWriteReview(null);
     flashToast(exists ? "Review updated" : "Review posted");
   };
+
+  const saveReview = (review) => {
+    if (reviews.some((r) => r.id === review.id)) setConfirm({ type: "edit", review });
+    else commitReview(review);
+  };
+
+  const requestDelete = (id) => setConfirm({ type: "delete", id });
 
   const deleteReview = (id) => {
     persist({ ...data, reviews: reviews.filter((r) => r.id !== id) });
@@ -250,7 +258,7 @@ export default function App() {
             myReviewIds={myReviewIds}
             myReactions={getMyReactions()}
             onEdit={(r) => setShowWriteReview(r)}
-            onDelete={deleteReview}
+            onDelete={requestDelete}
             onReact={toggleReaction}
             onOpen={setDetailId}
           />
@@ -264,7 +272,7 @@ export default function App() {
             isAdmin={isAdmin}
             myReviewIds={myReviewIds}
             onEdit={(r) => setShowWriteReview(r)}
-            onDelete={deleteReview}
+            onDelete={requestDelete}
             onLoginClick={() => setShowLogin(true)}
             onOpen={setDetailId}
             onLogout={() => setIsAdmin(false)}
@@ -332,8 +340,27 @@ export default function App() {
           myReaction={getMyReactions()[detailReview.id]}
           onClose={() => setDetailId(null)}
           onEdit={() => { setDetailId(null); setShowWriteReview(detailReview); }}
-          onDelete={() => deleteReview(detailReview.id)}
+          onDelete={() => requestDelete(detailReview.id)}
           onReact={(reaction) => toggleReaction(detailReview, reaction)}
+        />
+      )}
+
+      {confirm && (
+        <ConfirmDialog
+          T={T}
+          title={confirm.type === "delete" ? "Delete this review?" : "Save your changes?"}
+          message={confirm.type === "delete"
+            ? "This review will be permanently removed. This can't be undone."
+            : "Your edits will replace the current version of this review."}
+          confirmLabel={confirm.type === "delete" ? "Delete" : "Save"}
+          danger={confirm.type === "delete"}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => {
+            const c = confirm;
+            setConfirm(null);
+            if (c.type === "delete") deleteReview(c.id);
+            else commitReview(c.review);
+          }}
         />
       )}
     </div>
@@ -973,6 +1000,34 @@ function Modal({ children, onClose, title, T }) {
           <button onClick={onClose} style={iconBtnStyle(T)}><X size={16} /></button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDialog({ T, title, message, confirmLabel, danger, onConfirm, onCancel }) {
+  useEffect(() => {
+    // capture phase so Esc closes only this dialog, not the overlay underneath
+    const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); onCancel(); } };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, []);
+
+  return (
+    <div className="testi-overlay" onClick={onCancel} style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 70 }}>
+      <div
+        className="testi-card"
+        role="alertdialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: T.bg, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: 22, width: "100%", maxWidth: 360 }}
+      >
+        <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: "0 0 6px", fontWeight: 600 }}>{title}</h3>
+        <p style={{ fontSize: 13.5, color: T.inkMuted, margin: "0 0 18px", lineHeight: 1.5 }}>{message}</p>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onCancel} style={{ ...ghostBtnStyle(T), border: `1px solid ${T.cardBorder}`, flex: 1 }}>Cancel</button>
+          <button onClick={onConfirm} autoFocus style={{ ...primaryBtnStyle(T), flex: 1, ...(danger ? { background: T.negative, color: T.onAccent } : {}) }}>{confirmLabel}</button>
+        </div>
       </div>
     </div>
   );
