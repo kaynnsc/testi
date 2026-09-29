@@ -52,46 +52,38 @@ function formatDate(iso) {
 
 const THEMES = {
   light: {
-    bg: "#EAF4FF", bgElevated: "#FFFFFF", card: "#DCECFF", cardBorder: "#BBD9FA",
-    ink: "#1B3358", inkMuted: "#48699A", inkFaint: "#86A2C8",
-    accent: "#2E7DEB", accentDeep: "#1F5FBF", accentSoft: "#D9EAFF", onAccent: "#FFFFFF",
-    positive: "#2FA97A", negative: "#EE6A5E", dangerSoft: "#FFE8E5",
-    navBg: "#FFFFFF", navBorder: "#BBD9FA", overlay: "rgba(27,51,88,0.45)", dots: "#D2E6FF", isDark: false,
+    bg: "#F4F6FB", bgElevated: "#FFFFFF", card: "#EAEEF6", cardBorder: "#C5CDDE",
+    ink: "#352D3C", inkMuted: "#5E5875", inkFaint: "#948FA8", accent: "#5258A6",
+    accentSoft: "#E5E7F4", star: "#D98FAF", onAccent: "#FFFFFF",
+    positive: "#2F9E67", negative: "#C0473A", dangerSoft: "#FBEAE7",
+    navBg: "#FFFFFF", navBorder: "#C5CDDE", overlay: "rgba(53,45,60,0.4)", isDark: false,
   },
   dark: {
-    bg: "#0E1A2E", bgElevated: "#16263F", card: "#16263F", cardBorder: "#2B4670",
-    ink: "#E8F1FF", inkMuted: "#A3BDE3", inkFaint: "#6584B0",
-    accent: "#63AEFF", accentDeep: "#3C82D6", accentSoft: "#1E3A63", onAccent: "#0E1A2E",
-    positive: "#5FD3A4", negative: "#FF8D82", dangerSoft: "#3A2026",
-    navBg: "#12213A", navBorder: "#2B4670", overlay: "rgba(3,8,18,0.65)", dots: "#14243D", isDark: true,
+    bg: "#211C28", bgElevated: "#2C2635", card: "#2C2635", cardBorder: "#433B52",
+    ink: "#F2EFF6", inkMuted: "#C5CDDE", inkFaint: "#8B87A1", accent: "#DFA3BC",
+    accentSoft: "#3A3762", star: "#DFA3BC", onAccent: "#211C28",
+    positive: "#5FC98A", negative: "#E1786A", dangerSoft: "#382229",
+    navBg: "#27212F", navBorder: "#433B52", overlay: "rgba(0,0,0,0.6)", isDark: true,
   },
 };
 
 const FONT_LINK = `
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
 html, body, #root { margin: 0; padding: 0; width: 100%; }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; }
 body { overflow-x: hidden; }
-button { transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
-button:active { transform: scale(0.94); }
+button { transition: transform 0.12s ease, opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+button:active { transform: scale(0.96); }
 input, select, textarea { transition: border-color 0.15s ease; }
-input:focus, textarea:focus { border-color: #2E7DEB !important; }
 @keyframes testi-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes testi-slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes testi-scale-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
-@keyframes testi-pop { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
-@keyframes testi-wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-14deg); } 85% { transform: rotate(12deg); } }
+@keyframes testi-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes testi-scale-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+.testi-overlay { animation: testi-fade-in 0.18s ease; }
+.testi-sheet { animation: testi-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+.testi-card { animation: testi-scale-in 0.2s ease; }
 @keyframes testi-spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: testi-spin 1s linear infinite; }
-.testi-overlay { animation: testi-fade-in 0.18s ease; }
-.testi-sheet { animation: testi-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.testi-card { animation: testi-scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.testi-pop { animation: testi-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.testi-star { animation: testi-wiggle 3.2s ease-in-out infinite; transform-origin: center; }
 .testi-clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-@media (prefers-reduced-motion: reduce) {
-  .testi-overlay, .testi-sheet, .testi-card, .testi-pop, .testi-star { animation: none !important; }
-}
 `;
 
 export default function App() {
@@ -214,7 +206,7 @@ export default function App() {
   const toggleEmoji = () => persist({ ...data, settings: { ...data.settings, emojiEnabled: !data.settings.emojiEnabled } });
 
   return (
-    <div style={{ minHeight: "100vh", width: "100%", background: T.bg, backgroundImage: `radial-gradient(${T.dots} 2px, transparent 2px)`, backgroundSize: "24px 24px", fontFamily: "'Nunito', sans-serif", color: T.ink }}>
+    <div style={{ minHeight: "100vh", width: "100%", background: T.bg, fontFamily: "'Work Sans', sans-serif", color: T.ink }}>
       <style>{FONT_LINK}</style>
 
       {connectionError && (
@@ -228,20 +220,17 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             {page !== "wall" && (
               <button onClick={() => setPage("wall")} aria-label="Back" title="Back" style={roundBtnStyle(T)}>
-                <ChevronLeft size={22} />
+                <ChevronLeft size={20} />
               </button>
             )}
             <button onClick={() => setPage("wall")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, minWidth: 0 }}>
-              <h1 style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 22, fontWeight: 600, margin: 0, display: "flex", alignItems: "center", gap: 10, color: T.ink }}>
-                <span style={{ width: 36, height: 36, borderRadius: 12, background: T.accent, boxShadow: `0 3px 0 ${T.accentDeep}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Star className="testi-star" size={19} color={T.onAccent} fill={T.onAccent} />
-                </span>
-                Testimonials
+              <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 21, fontWeight: 600, margin: 0, display: "flex", alignItems: "center", gap: 8, color: T.ink }}>
+                <Star size={18} color={T.star} fill={T.star} /> Testimonials
               </h1>
             </button>
           </div>
           <button onClick={() => setDark(!dark)} aria-label="Toggle theme" style={roundBtnStyle(T)}>
-            {dark ? <Sun size={18} /> : <Moon size={18} />}
+            {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
 
@@ -282,24 +271,28 @@ export default function App() {
       </div>
 
       {/* bottom nav */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.navBg, borderTop: `2px solid ${T.navBorder}`, borderRadius: "26px 26px 0 0", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "10px 20px calc(10px + env(safe-area-inset-bottom))", zIndex: 20 }}>
-        <button onClick={() => { setPage("wall"); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={navBtnStyle(T, page === "wall")} title="Home">
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.navBg, borderTop: `1px solid ${T.navBorder}`, display: "flex", justifyContent: "space-around", alignItems: "center", padding: "10px 20px calc(10px + env(safe-area-inset-bottom))", zIndex: 20 }}>
+        <button
+          onClick={() => { setPage("wall"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          style={{ ...navBtnStyle(T, page === "wall"), background: "none", border: "none" }}
+          title="Home"
+        >
           <Home size={20} />
           <span style={navLabelStyle(T, page === "wall")}>Home</span>
         </button>
-        <button onClick={() => setShowWriteReview({})} style={{ ...navBtnStyle(T, false), padding: 0 }} title="Write a review">
-          <div style={{ width: 54, height: 54, borderRadius: "50%", background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: T.onAccent, marginTop: -28, border: `4px solid ${T.navBg}`, boxShadow: `0 5px 0 ${T.accentDeep}` }}>
-            <Plus size={24} strokeWidth={3} />
+        <button onClick={() => setShowWriteReview({})} style={{ ...navBtnStyle(T, false), background: "none", border: "none" }} title="Write a review">
+          <div style={{ width: 46, height: 46, borderRadius: "50%", background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: T.onAccent, marginTop: -22, boxShadow: `0 4px 12px ${T.accent}55` }}>
+            <Plus size={22} />
           </div>
         </button>
-        <button onClick={() => setPage("profile")} style={navBtnStyle(T, page === "profile")} title="Profile">
-          <User size={20} />
+        <button onClick={() => setPage("profile")} style={{ ...navBtnStyle(T, page === "profile"), background: "none", border: "none" }} title="Profile">
+          <User size={20} color={page === "profile" ? T.accent : T.inkMuted} />
           <span style={navLabelStyle(T, page === "profile")}>{isAdmin ? "Admin" : "Profile"}</span>
         </button>
       </div>
 
       {toast && (
-        <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", background: T.accent, color: T.onAccent, padding: "10px 18px", borderRadius: 999, fontWeight: 700, boxShadow: `0 3px 0 ${T.accentDeep}`, fontSize: 13.5, display: "flex", alignItems: "center", gap: 6, zIndex: 30 }}>
+        <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", background: T.accent, color: T.onAccent, padding: "10px 18px", borderRadius: 6, fontSize: 13.5, display: "flex", alignItems: "center", gap: 6, zIndex: 30 }}>
           <Check size={14} /> {toast}
         </div>
       )}
@@ -358,10 +351,10 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
   return (
     <div style={{ padding: "0 20px" }}>
       {/* grade report */}
-      <div style={{ background: T.bgElevated, border: `2px solid ${T.cardBorder}`, borderRadius: 26, padding: 20, marginBottom: 18, boxShadow: `0 5px 0 ${T.cardBorder}` }}>
+      <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 16, padding: 20, marginBottom: 18 }}>
         <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 16 }}>
           <div style={{ textAlign: "center", flexShrink: 0 }}>
-            <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 40, fontWeight: 700, color: T.accent, lineHeight: 1 }}>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: 40, fontWeight: 700, color: T.accent, lineHeight: 1 }}>
               {stats.avg.toFixed(1)}
             </div>
             <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>out of 5</div>
@@ -377,8 +370,8 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
               return (
                 <div key={star} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
                   <span style={{ fontSize: 10.5, color: T.inkFaint, width: 20, flexShrink: 0 }}>{star}★</span>
-                  <div style={{ flex: 1, height: 10, borderRadius: 999, background: T.card, overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: T.accent, borderRadius: 999 }} />
+                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: T.card, overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: T.accent, borderRadius: 3 }} />
                   </div>
                   <span style={{ fontSize: 10, color: T.inkFaint, width: 18, textAlign: "right", flexShrink: 0 }}>{count}</span>
                 </div>
@@ -390,7 +383,7 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
 
       {/* wall */}
       {reviews.length === 0 ? (
-        <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "30px 0" }}>No reviews yet — be the first to write one ✨</div>
+        <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "30px 0" }}>No reviews yet — be the first to write one.</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {reviews.map((r) => (
@@ -443,16 +436,16 @@ function ReviewText({ text, T, expanded, size = 14, onClampChange, onOpen, mb = 
       <p
         ref={ref}
         className={expanded ? undefined : "testi-clamp"}
-        style={{ fontSize: size, color: T.ink, lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+        style={{ fontSize: size, color: T.ink, lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
       >
         {text}
       </p>
       {!expanded && clamped && (
         <button
           onClick={(e) => { e.stopPropagation(); if (onOpen) onOpen(); }}
-          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: T.accent, fontWeight: 800, fontSize: size - 1, cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}
+          style={{ background: "none", border: "none", padding: 0, marginTop: 4, color: T.accent, fontWeight: 600, fontSize: size - 1, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" }}
         >
-          Read more →
+          Read more
         </button>
       )}
     </div>
@@ -462,30 +455,26 @@ function ReviewText({ text, T, expanded, size = 14, onClampChange, onOpen, mb = 
 function ReviewCard({ review, T, settings, canManage, myReaction, onEdit, onDelete, onReact, onOpen, expanded }) {
   const [clamped, setClamped] = useState(false);
   const clickable = !expanded && clamped;
-  const anon = review.isAnonymous || !review.name;
-  const displayName = anon ? "Anonymous" : review.name;
-  const stop = (e) => e.stopPropagation();
 
   return (
     <div
       className={expanded ? undefined : "testi-card"}
       onClick={clickable ? onOpen : undefined}
-      style={{ background: T.bgElevated, border: `2px solid ${T.cardBorder}`, borderRadius: 22, padding: 16, boxShadow: `0 4px 0 ${T.cardBorder}`, cursor: clickable ? "pointer" : "default" }}
+      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: 16, cursor: clickable ? "pointer" : "default" }}
     >
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 10, gap: 10 }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.accentSoft, color: T.accent, border: `2px solid ${T.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Fredoka', sans-serif", fontWeight: 600, fontSize: 17, flexShrink: 0 }}>
-          {anon ? "🙂" : displayName.trim().charAt(0).toUpperCase()}
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {review.isAnonymous || !review.name ? "Anonymous" : review.name}
+          </div>
           <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 1 }}>{formatDate(review.date)}</div>
         </div>
-        <div style={{ flexShrink: 0 }}><StarRow value={review.rating} T={T} size={14} /></div>
+        <StarRow value={review.rating} T={T} size={14} />
       </div>
 
       <ReviewText text={review.text} T={T} expanded={expanded} onClampChange={setClamped} onOpen={onOpen} />
 
-      <div onClick={stop} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "default" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "default" }}>
         {settings.emojiEnabled ? (
           <div style={{ display: "flex", gap: 6 }}>
             <ReactionBtn T={T} icon={<ThumbsUp size={13} />} count={review.reactions?.agree || 0} active={myReaction === "agree"} color={T.positive} onClick={() => onReact("agree")} />
@@ -516,11 +505,11 @@ function ReviewDetail({ review, T, settings, canManage, myReaction, onClose, onE
 
   return (
     <div className="testi-overlay" onClick={onClose} style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 60 }}>
-      <div className="testi-pop" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, maxHeight: "86vh", display: "flex", flexDirection: "column" }}>
+      <div className="testi-card" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, maxHeight: "86vh", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-          <button onClick={onClose} aria-label="Close" style={roundBtnStyle(T)}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Close" style={roundBtnStyle(T)}><X size={16} /></button>
         </div>
-        <div style={{ overflowY: "auto", paddingBottom: 6 }}>
+        <div style={{ overflowY: "auto" }}>
           <ReviewCard
             expanded
             review={review}
@@ -543,8 +532,8 @@ function ReactionBtn({ T, icon, count, active, color, onClick }) {
     <button
       onClick={onClick}
       style={{
-        display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 999, border: `2px solid ${active ? color : T.cardBorder}`,
-        background: active ? `${color}22` : "transparent", color: active ? color : T.inkMuted, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "'Nunito', sans-serif",
+        display: "flex", alignItems: "center", gap: 4, padding: "5px 9px", borderRadius: 999, border: `1px solid ${active ? color : T.cardBorder}`,
+        background: active ? `${color}1A` : "transparent", color: active ? color : T.inkMuted, cursor: "pointer", fontSize: 11.5, fontFamily: "'Work Sans', sans-serif",
       }}
     >
       {icon} {count}
@@ -564,7 +553,7 @@ function StarRow({ value, T, size = 16, interactive, onChange }) {
           onClick={() => interactive && onChange(n)}
           style={{ background: "none", border: "none", padding: 0, cursor: interactive ? "pointer" : "default", display: "flex" }}
         >
-          <Star size={interactive ? size + 8 : size} color={T.accent} strokeWidth={2.4} fill={n <= rounded ? T.accent : "none"} />
+          <Star size={interactive ? size + 8 : size} color={T.star} fill={n <= rounded ? T.star : "none"} />
         </button>
       ))}
     </div>
@@ -645,7 +634,7 @@ function Profile({ T, reviews, settings, isAdmin, myReviewIds, onEdit, onDelete,
           <User size={22} />
         </div>
         <div>
-          <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 18, fontWeight: 600 }}>{isAdmin ? "Admin" : "Your profile"}</div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 600 }}>{isAdmin ? "Admin" : "Your profile"}</div>
           <div style={{ fontSize: 12, color: T.inkFaint }}>{myReviews.length} review{myReviews.length !== 1 ? "s" : ""} from this device</div>
         </div>
       </div>
@@ -677,7 +666,7 @@ function MyReviewRow({ r, T, onEdit, onDelete, onOpen }) {
   return (
     <div
       onClick={clamped ? onOpen : undefined}
-      style={{ background: T.bgElevated, border: `2px solid ${T.cardBorder}`, borderRadius: 18, padding: 12, boxShadow: `0 3px 0 ${T.cardBorder}`, cursor: clamped ? "pointer" : "default" }}
+      style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 12, cursor: clamped ? "pointer" : "default" }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <StarRow value={r.rating} T={T} size={12} />
@@ -758,7 +747,7 @@ function AdminPanel({ T, settings, onToggleEmoji, data, persist, flashToast, aut
   };
 
   return (
-    <div style={{ background: T.bgElevated, border: `2px solid ${T.cardBorder}`, borderRadius: 22, padding: 16, marginBottom: 20, boxShadow: `0 4px 0 ${T.cardBorder}` }}>
+    <div style={{ background: T.bgElevated, border: `1px solid ${T.cardBorder}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
       <div style={{ fontSize: 12.5, fontWeight: 600, color: T.inkMuted, marginBottom: 12, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>
         <SettingsIcon size={13} /> Admin settings
       </div>
@@ -801,10 +790,10 @@ function AdminPanel({ T, settings, onToggleEmoji, data, persist, flashToast, aut
 function Modal({ children, onClose, title, T }) {
   return (
     <div className="testi-overlay" style={{ position: "fixed", inset: 0, background: T.overlay, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50 }} onClick={onClose}>
-      <div className="testi-sheet" onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderTop: `2px solid ${T.cardBorder}`, borderRadius: "28px 28px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" }}>
+      <div className="testi-sheet" onClick={(e) => e.stopPropagation()} style={{ background: T.bg, borderRadius: "16px 16px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 20, margin: 0, fontWeight: 600 }}>{title}</h3>
-          <button onClick={onClose} aria-label="Close" style={{ ...iconBtnStyle(T), background: T.accentSoft, color: T.accent }}><X size={16} /></button>
+          <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 18, margin: 0, fontWeight: 600 }}>{title}</h3>
+          <button onClick={onClose} style={iconBtnStyle(T)}><X size={16} /></button>
         </div>
         {children}
       </div>
@@ -815,33 +804,33 @@ function Modal({ children, onClose, title, T }) {
 function Field({ T, label, children }) {
   return (
     <div>
-      <label style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted, display: "block", marginBottom: 5 }}>{label}</label>
+      <label style={{ fontSize: 11.5, color: T.inkFaint, display: "block", marginBottom: 4 }}>{label}</label>
       {children}
     </div>
   );
 }
 
-function roundBtnStyle(T) {
-  return { width: 40, height: 40, borderRadius: "50%", background: T.bgElevated, border: `2px solid ${T.cardBorder}`, boxShadow: `0 3px 0 ${T.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.ink, cursor: "pointer", flexShrink: 0, padding: 0 };
-}
 function navBtnStyle(T, active) {
-  return { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, color: active ? T.accent : T.inkMuted, cursor: "pointer", padding: "6px 18px", borderRadius: 16, border: "none", background: active ? T.accentSoft : "transparent" };
+  return { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, textDecoration: "none", color: active ? T.accent : T.inkMuted, cursor: "pointer" };
 }
 function navLabelStyle(T, active) {
-  return { fontSize: 11, fontWeight: 800, color: active ? T.accent : T.inkMuted, fontFamily: "'Nunito', sans-serif" };
+  return { fontSize: 10.5, color: active ? T.accent : T.inkMuted, fontFamily: "'Work Sans', sans-serif" };
 }
 function toggleChipStyle(T, active) {
-  return { padding: "10px 0", borderRadius: 14, border: `2px solid ${active ? T.accent : T.cardBorder}`, background: active ? T.accentSoft : "transparent", color: active ? T.accent : T.inkMuted, cursor: "pointer", fontSize: 13, fontWeight: 800, fontFamily: "'Nunito', sans-serif" };
+  return { padding: "9px 0", borderRadius: 8, border: `1px solid ${active ? T.accent : T.cardBorder}`, background: active ? T.accentSoft : "transparent", color: active ? T.accent : T.inkMuted, cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: "'Work Sans', sans-serif" };
 }
 function inputStyle(T) {
-  return { border: `2px solid ${T.cardBorder}`, borderRadius: 14, padding: "10px 14px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Nunito', sans-serif", width: "100%", fontSize: 16, minWidth: 0, boxSizing: "border-box" };
+  return { border: `1px solid ${T.cardBorder}`, borderRadius: 8, padding: "10px 12px", background: T.bgElevated, color: T.ink, outline: "none", fontFamily: "'Work Sans', sans-serif", width: "100%", fontSize: 16, minWidth: 0, boxSizing: "border-box" };
 }
 function primaryBtnStyle(T) {
-  return { background: T.accent, color: T.onAccent, border: "none", borderRadius: 16, padding: "12px 16px", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "'Nunito', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", boxShadow: `0 4px 0 ${T.accentDeep}` };
+  return { background: T.accent, color: T.onAccent, border: "none", borderRadius: 8, padding: "12px 16px", fontSize: 14.5, cursor: "pointer", fontFamily: "'Work Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%" };
 }
 function ghostBtnStyle(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 13.5, fontWeight: 700, padding: "10px 14px", borderRadius: 14, border: `2px dashed ${T.cardBorder}`, background: "transparent", color: T.inkMuted, cursor: "pointer", fontFamily: "'Nunito', sans-serif" };
+  return { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 13.5, padding: "10px 14px", borderRadius: 8, border: `1px dashed ${T.cardBorder}`, background: "transparent", color: T.inkMuted, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" };
 }
 function iconBtnStyle(T) {
-  return { display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 12, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+  return { display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", color: T.inkMuted, flexShrink: 0 };
+}
+function roundBtnStyle(T) {
+  return { width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.cardBorder}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.ink, cursor: "pointer", flexShrink: 0, padding: 0 };
 }
