@@ -97,6 +97,7 @@ export default function App() {
 
   const [data, setData] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   const [page, setPage] = useState("wall"); // wall | profile
   const [showWriteReview, setShowWriteReview] = useState(null); // null | {} (new) | review object (editing)
   const [toast, setToast] = useState("");
@@ -123,20 +124,31 @@ export default function App() {
   useEffect(() => {
     const unsub = onSnapshot(DATA_DOC_REF, (snap) => {
       if (!snap.exists()) {
-        setDoc(DATA_DOC_REF, DEFAULT_DATA).catch(() => {});
+        setDoc(DATA_DOC_REF, DEFAULT_DATA).catch(() => setConnectionError(true));
         setData(DEFAULT_DATA);
       } else if (!editingRef.current) {
         const d = snap.data();
         setData({ settings: { ...DEFAULT_SETTINGS, ...(d.settings || {}) }, reviews: d.reviews || [] });
       }
       setDataLoaded(true);
-    }, () => { setData(DEFAULT_DATA); setDataLoaded(true); });
+    }, (err) => {
+      console.error(err);
+      setConnectionError(true);
+      setData(DEFAULT_DATA);
+      setDataLoaded(true);
+    });
     return () => unsub();
   }, []);
 
   const persist = useCallback(async (next) => {
     setData(next);
-    try { await setDoc(DATA_DOC_REF, next); } catch (e) { flashToast("Couldn't save — check your connection"); }
+    try {
+      await setDoc(DATA_DOC_REF, next);
+      setConnectionError(false);
+    } catch (e) {
+      setConnectionError(true);
+      flashToast("Couldn't save — check your connection");
+    }
   }, []);
 
   const handleLogin = () => {
@@ -191,6 +203,12 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", width: "100%", background: T.bg, fontFamily: "'Work Sans', sans-serif", color: T.ink }}>
       <style>{FONT_LINK}</style>
+
+      {connectionError && (
+        <div style={{ background: T.dangerSoft, color: T.negative, fontSize: 12.5, padding: "8px 20px", textAlign: "center" }}>
+          Couldn't connect to Firebase. Check your .env / Cloudflare environment variables and Firestore rules.
+        </div>
+      )}
 
       <div style={{ maxWidth: 560, margin: "0 auto", paddingBottom: 90 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 20px 14px" }}>
