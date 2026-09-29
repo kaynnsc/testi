@@ -11,6 +11,11 @@ const AUTH_DOC_REF = doc(db, "pricelist", "main");
 const DATA_DOC_REF = doc(db, "testi", "data");
 const THEME_KEY = "testi-theme";
 
+const RECENT_DAYS = 7;
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// timestamp in ms, or 0 when the date is missing/invalid
+const reviewTime = (r) => { const t = new Date(r.date).getTime(); return isNaN(t) ? 0 : t; };
+
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const DEFAULT_SETTINGS = { emojiEnabled: true };
@@ -348,6 +353,89 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
     return { total, avg, counts };
   }, [reviews]);
 
+  // ---- filters + sections ----
+  const [view, setView] = useState("all"); // all | recent
+  const [fYear, setFYear] = useState("");
+  const [fMonth, setFMonth] = useState(""); // "0".."11"
+  const [fDay, setFDay] = useState("");
+  const hasDateFilter = !!(fYear || fMonth || fDay);
+
+  const years = useMemo(() => {
+    const set = new Set();
+    reviews.forEach((r) => { const t = reviewTime(r); if (t) set.add(new Date(t).getFullYear()); });
+    return [...set].sort((a, b) => b - a);
+  }, [reviews]);
+
+  const { list, sections } = useMemo(() => {
+    const sorted = [...reviews].sort((a, b) => reviewTime(b) - reviewTime(a));
+    const cutoff = Date.now() - RECENT_DAYS * 86400000;
+
+    let list;
+    if (view === "recent") {
+      list = sorted.filter((r) => reviewTime(r) >= cutoff);
+    } else if (hasDateFilter) {
+      list = sorted.filter((r) => {
+        const t = reviewTime(r);
+        if (!t) return false;
+        const d = new Date(t);
+        return (!fYear || d.getFullYear() === Number(fYear))
+          && (fMonth === "" || d.getMonth() === Number(fMonth))
+          && (!fDay || d.getDate() === Number(fDay));
+      });
+    } else {
+      list = sorted;
+    }
+
+    const groupByMonth = (items) => {
+      const groups = [];
+      items.forEach((r) => {
+        const t = reviewTime(r);
+        const d = new Date(t);
+        const key = t ? `${d.getFullYear()}-${d.getMonth()}` : "undated";
+        const title = t ? d.toLocaleDateString(undefined, { month: "long", year: "numeric" }) : "Undated";
+        let g = groups.find((x) => x.key === key);
+        if (!g) { g = { key, title, items: [] }; groups.push(g); }
+        g.items.push(r);
+      });
+      return groups;
+    };
+
+    let sections;
+    if (view === "recent") {
+      sections = list.length ? [{ key: "recent", title: `Recent · last ${RECENT_DAYS} days`, items: list }] : [];
+    } else if (hasDateFilter) {
+      sections = groupByMonth(list);
+    } else {
+      const recent = list.filter((r) => reviewTime(r) >= cutoff);
+      const older = list.filter((r) => reviewTime(r) < cutoff);
+      sections = [
+        ...(recent.length ? [{ key: "recent", title: "Recent", items: recent }] : []),
+        ...groupByMonth(older),
+      ];
+    }
+    return { list, sections };
+  }, [reviews, view, hasDateFilter, fYear, fMonth, fDay]);
+
+  const onDateChange = (setter) => (e) => { setter(e.target.value); setView("all"); };
+  const showRecent = () => { setView("recent"); setFYear(""); setFMonth(""); setFDay(""); };
+  const clearFilters = () => { setView("all"); setFYear(""); setFMonth(""); setFDay(""); };
+  const selectStyle = { ...inputStyle(T), width: "auto", flex: 1, padding: "9px 10px", colorScheme: T.isDark ? "dark" : "light" };
+
+  const renderCard = (r) => (
+    <ReviewCard
+      key={r.id}
+      review={r}
+      T={T}
+      settings={settings}
+      canManage={isAdmin || myReviewIds.includes(r.id)}
+      myReaction={myReactions[r.id]}
+      onEdit={() => onEdit(r)}
+      onDelete={() => onDelete(r.id)}
+      onReact={(reaction) => onReact(r, reaction)}
+      onOpen={() => onOpen(r.id)}
+    />
+  );
+
   return (
     <div style={{ padding: "0 20px" }}>
       {/* grade report */}
@@ -381,24 +469,59 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
         </div>
       </div>
 
+      {/* filters */}
+      {reviews.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button onClick={clearFilters} style={{ ...toggleChipStyle(T, view === "all" && !hasDateFilter), flex: 1 }}>All</button>
+            <button onClick={showRecent} style={{ ...toggleChipStyle(T, view === "recent"), flex: 1 }}>Recent</button>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <select aria-label="Year" value={fYear} onChange={onDateChange(setFYear)} style={selectStyle}>
+              <option value="">Year</option>
+              {years.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select aria-label="Month" value={fMonth} onChange={onDateChange(setFMonth)} style={selectStyle}>
+              <option value="">Month</option>
+              {MONTH_NAMES.map((m, idx) => <option key={m} value={idx}>{m}</option>)}
+            </select>
+            <select aria-label="Day" value={fDay} onChange={onDateChange(setFDay)} style={selectStyle}>
+              <option value="">Day</option>
+              {Array.from({ length: 31 }, (_, n) => n + 1).map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          {(hasDateFilter || view === "recent") && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, fontSize: 12, color: T.inkFaint }}>
+              <span>Showing {list.length} of {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
+              {hasDateFilter && (
+                <button onClick={clearFilters} style={{ background: "none", border: "none", padding: 0, color: T.accent, fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" }}>
+                  Clear filter
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* wall */}
       {reviews.length === 0 ? (
         <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "30px 0" }}>No reviews yet — be the first to write one.</div>
+      ) : list.length === 0 ? (
+        <div style={{ textAlign: "center", color: T.inkFaint, fontSize: 13.5, padding: "30px 0" }}>
+          {view === "recent" ? `No reviews in the last ${RECENT_DAYS} days.` : "No reviews match this filter."}
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {reviews.map((r) => (
-            <ReviewCard
-              key={r.id}
-              review={r}
-              T={T}
-              settings={settings}
-              canManage={isAdmin || myReviewIds.includes(r.id)}
-              myReaction={myReactions[r.id]}
-              onEdit={() => onEdit(r)}
-              onDelete={() => onDelete(r.id)}
-              onReact={(reaction) => onReact(r, reaction)}
-              onOpen={() => onOpen(r.id)}
-            />
+        <div>
+          {sections.map((sec) => (
+            <div key={sec.key} style={{ marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 12.5, fontWeight: 600, color: T.inkMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+                <span>{sec.title}</span>
+                <span style={{ color: T.inkFaint, fontWeight: 400, letterSpacing: 0 }}>{sec.items.length}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {sec.items.map(renderCard)}
+              </div>
+            </div>
           ))}
         </div>
       )}
