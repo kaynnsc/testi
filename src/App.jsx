@@ -3,7 +3,7 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import {
   Star, Moon, Sun, Home, Plus, User, X, Check, Loader2, Pencil, Trash2,
-  Lock, Unlock, ThumbsUp, ThumbsDown, Upload, Download, Settings as SettingsIcon, ChevronLeft,
+  Lock, Unlock, ThumbsUp, ThumbsDown, Upload, Download, Settings as SettingsIcon, ChevronLeft, SlidersHorizontal,
 } from "lucide-react";
 
 // ---- shared with pricelist/nota: same Firebase project, same admin password ----
@@ -12,6 +12,8 @@ const DATA_DOC_REF = doc(db, "testi", "data");
 const THEME_KEY = "testi-theme";
 
 const RECENT_DAYS = 7;
+const RATING_STEP = 0.5; // rating input granularity: 0.5 = half stars, 0.25 = quarter stars
+const fmtRating = (v) => String(Math.round((Number(v) || 0) * 100) / 100);
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // timestamp in ms, or 0 when the date is missing/invalid
 const reviewTime = (r) => { const t = new Date(r.date).getTime(); return isNaN(t) ? 0 : t; };
@@ -416,6 +418,15 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
     return { list, sections };
   }, [reviews, view, hasDateFilter, fYear, fMonth, fDay]);
 
+  const [showFilter, setShowFilter] = useState(false);
+  const isFiltered = view === "recent" || hasDateFilter;
+  let filterLabel = "All reviews";
+  if (view === "recent") filterLabel = `Recent · last ${RECENT_DAYS} days`;
+  else if (hasDateFilter) {
+    filterLabel = (!fMonth && fMonth !== "0" && !fYear)
+      ? `Day ${fDay}`
+      : [fDay, fMonth !== "" ? MONTH_NAMES[Number(fMonth)] : "", fYear].filter(Boolean).join(" ");
+  }
   const onDateChange = (setter) => (e) => { setter(e.target.value); setView("all"); };
   const showRecent = () => { setView("recent"); setFYear(""); setFMonth(""); setFDay(""); };
   const clearFilters = () => { setView("all"); setFYear(""); setFMonth(""); setFDay(""); };
@@ -469,37 +480,19 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
         </div>
       </div>
 
-      {/* filters */}
+      {/* filter row */}
       {reviews.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <button onClick={clearFilters} style={{ ...toggleChipStyle(T, view === "all" && !hasDateFilter), flex: 1 }}>All</button>
-            <button onClick={showRecent} style={{ ...toggleChipStyle(T, view === "recent"), flex: 1 }}>Recent</button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14 }}>
+          <div style={{ fontSize: 13, color: T.inkMuted, minWidth: 0 }}>
+            <strong style={{ color: T.ink, fontWeight: 600 }}>{filterLabel}</strong>
+            {isFiltered && <span style={{ color: T.inkFaint }}> · {list.length} of {reviews.length}</span>}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <select aria-label="Year" value={fYear} onChange={onDateChange(setFYear)} style={selectStyle}>
-              <option value="">Year</option>
-              {years.map((y) => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <select aria-label="Month" value={fMonth} onChange={onDateChange(setFMonth)} style={selectStyle}>
-              <option value="">Month</option>
-              {MONTH_NAMES.map((m, idx) => <option key={m} value={idx}>{m}</option>)}
-            </select>
-            <select aria-label="Day" value={fDay} onChange={onDateChange(setFDay)} style={selectStyle}>
-              <option value="">Day</option>
-              {Array.from({ length: 31 }, (_, n) => n + 1).map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          {(hasDateFilter || view === "recent") && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, fontSize: 12, color: T.inkFaint }}>
-              <span>Showing {list.length} of {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
-              {hasDateFilter && (
-                <button onClick={clearFilters} style={{ background: "none", border: "none", padding: 0, color: T.accent, fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "'Work Sans', sans-serif" }}>
-                  Clear filter
-                </button>
-              )}
-            </div>
-          )}
+          <button onClick={() => setShowFilter(true)} aria-label="Filter reviews" title="Filter" style={{ ...roundBtnStyle(T), position: "relative" }}>
+            <SlidersHorizontal size={16} />
+            {isFiltered && (
+              <span style={{ position: "absolute", top: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: T.accent, border: `2px solid ${T.bg}` }} />
+            )}
+          </button>
         </div>
       )}
 
@@ -524,6 +517,43 @@ function Wall({ T, reviews, settings, isAdmin, myReviewIds, myReactions, onEdit,
             </div>
           ))}
         </div>
+      )}
+
+      {showFilter && (
+        <Modal T={T} title="Filter reviews" onClose={() => setShowFilter(false)}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={clearFilters} style={{ ...toggleChipStyle(T, !isFiltered), flex: 1 }}>All</button>
+              <button onClick={showRecent} style={{ ...toggleChipStyle(T, view === "recent"), flex: 1 }}>Recent</button>
+            </div>
+
+            <Field T={T} label="Or pick a date">
+              <div style={{ display: "flex", gap: 8 }}>
+                <select aria-label="Year" value={fYear} onChange={onDateChange(setFYear)} style={selectStyle}>
+                  <option value="">Year</option>
+                  {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <select aria-label="Month" value={fMonth} onChange={onDateChange(setFMonth)} style={selectStyle}>
+                  <option value="">Month</option>
+                  {MONTH_NAMES.map((m, idx) => <option key={m} value={idx}>{m}</option>)}
+                </select>
+                <select aria-label="Day" value={fDay} onChange={onDateChange(setFDay)} style={selectStyle}>
+                  <option value="">Day</option>
+                  {Array.from({ length: 31 }, (_, n) => n + 1).map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </Field>
+
+            <div style={{ fontSize: 12, color: T.inkFaint }}>
+              {isFiltered ? `Showing ${list.length} of ${reviews.length} review${reviews.length !== 1 ? "s" : ""}` : "Showing all reviews"}
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={clearFilters} disabled={!isFiltered} style={{ ...ghostBtnStyle(T), flex: 1, opacity: isFiltered ? 1 : 0.5 }}>Clear</button>
+              <button onClick={() => setShowFilter(false)} style={{ ...primaryBtnStyle(T), flex: 1 }}>Done</button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -664,21 +694,42 @@ function ReactionBtn({ T, icon, count, active, color, onClick }) {
   );
 }
 
+// Shows partial stars (rounded to the nearest quarter). When interactive, tapping the left/right part of a star picks a partial rating.
 function StarRow({ value, T, size = 16, interactive, onChange }) {
-  const rounded = Math.round(value);
+  const starSize = interactive ? size + 8 : size;
+  const shown = Math.min(5, Math.max(0, Math.round((Number(value) || 0) * 4) / 4));
   return (
     <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          disabled={!interactive}
-          onClick={() => interactive && onChange(n)}
-          style={{ background: "none", border: "none", padding: 0, cursor: interactive ? "pointer" : "default", display: "flex" }}
-        >
-          <Star size={interactive ? size + 8 : size} color={T.star} fill={n <= rounded ? T.star : "none"} />
-        </button>
-      ))}
+      {[1, 2, 3, 4, 5].map((n) => {
+        const frac = Math.min(1, Math.max(0, shown - (n - 1)));
+        // the star glyph spans roughly x=2..22 of its 24-wide box, so map the fraction onto that
+        const clip = frac >= 1 ? 100 : frac <= 0 ? 0 : ((2 + 20 * frac) / 24) * 100;
+        const pick = (e) => {
+          if (!interactive) return;
+          if (e.detail === 0) { onChange(n); return; } // keyboard activation: whole star
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+          const snapped = Math.ceil((n - 1 + x) / RATING_STEP - 1e-9) * RATING_STEP;
+          onChange(Math.min(5, Math.max(RATING_STEP, snapped)));
+        };
+        return (
+          <button
+            key={n}
+            type="button"
+            disabled={!interactive}
+            onClick={pick}
+            aria-label={`${n} star${n > 1 ? "s" : ""}`}
+            style={{ background: "none", border: "none", padding: 0, cursor: interactive ? "pointer" : "default", display: "block", position: "relative", width: starSize, height: starSize }}
+          >
+            <Star size={starSize} color={T.star} fill="none" style={{ display: "block" }} />
+            {clip > 0 && (
+              <span style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${clip}%`, overflow: "hidden", display: "block" }}>
+                <Star size={starSize} color={T.star} fill={T.star} style={{ display: "block" }} />
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -710,6 +761,9 @@ function WriteReviewModal({ T, review, onClose, onSave, editingRef }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }} onFocus={() => (editingRef.current = true)} onBlur={() => (editingRef.current = false)}>
         <div style={{ textAlign: "center" }}>
           <StarRow value={rating} T={T} size={22} interactive onChange={setRating} />
+          <div style={{ fontSize: 12.5, color: T.inkMuted, marginTop: 6 }}>
+            {fmtRating(rating)} / 5 <span style={{ color: T.inkFaint }}>· tap the left side of a star for a partial rating</span>
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
@@ -846,7 +900,7 @@ function AdminPanel({ T, settings, onToggleEmoji, data, persist, flashToast, aut
             id: uid(),
             name: name.toLowerCase() === "anonymous" ? "" : name,
             isAnonymous: !name || name.toLowerCase() === "anonymous",
-            rating: parseInt(lower.rating, 10) || 5,
+            rating: Math.min(5, Math.max(RATING_STEP, Math.round((parseFloat(lower.rating) || 5) / RATING_STEP) * RATING_STEP)),
             text: lower.review || lower.text || "",
             date: lower.date ? new Date(lower.date).toISOString() : new Date().toISOString(),
             reactions: { agree: parseInt(lower.agree, 10) || 0, disagree: parseInt(lower.disagree, 10) || 0 },
